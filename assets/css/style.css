@@ -201,6 +201,8 @@ section + section { border-top: 1px solid var(--border); }
 /* ── Contact ── */
 #contact a { font-weight: 600; }
 #contact .links { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem; }
+#contact .links a { display: inline-flex; align-items: center; gap: 0.35rem; }
+#contact .links .icon { flex-shrink: 0; }
 
 /* ── Footer ── */
 footer {
