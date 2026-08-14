@@ -1,1 +1,387 @@
-<h1>Hello World!</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MossIV — Your Name Here</title>
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Design Tokens ── */
+    :root {
+      --bg:        #0d1117;
+      --bg-card:   #161b22;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --accent2:   #bc8cff;
+      --link:      #58a6ff;
+      --radius:    10px;
+      --max-w:     960px;
+      --gap:       1.5rem;
+      --font:      system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --mono:      "Fira Code", "Cascadia Code", ui-monospace, monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.65;
+      font-size: 1rem;
+    }
+
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Layout ── */
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0;
+      background: rgba(13, 17, 23, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    nav .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0.85rem 1.5rem;
+    }
+    nav .logo {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    nav .logo span { color: var(--accent); }
+    nav ul {
+      display: flex; gap: 1.5rem; list-style: none;
+    }
+    nav ul a { font-size: 0.92rem; color: var(--muted); font-weight: 500; }
+    nav ul a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── Hero ── */
+    #hero {
+      padding: 6rem 0 4rem;
+      border-bottom: 1px solid var(--border);
+    }
+    #hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+    #hero h1 .accent { color: var(--accent); }
+    #hero .tagline {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin-bottom: 1.5rem;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.65rem 1.3rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { background: #4090ea; text-decoration: none; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border-color: var(--border);
+      margin-left: 0.6rem;
+    }
+    .btn-ghost:hover { border-color: var(--muted); text-decoration: none; }
+
+    /* ── Sections ── */
+    section { padding: 3.5rem 0; }
+    section + section { border-top: 1px solid var(--border); }
+
+    .section-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .section-title::before {
+      content: '';
+      display: block;
+      width: 4px; height: 1.2em;
+      border-radius: 2px;
+      background: var(--accent);
+    }
+
+    /* ── About ── */
+    #about p { color: var(--muted); max-width: 680px; }
+    #about .meta {
+      display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;
+    }
+    #about .meta span {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--muted);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.7rem;
+      border-radius: 999px;
+    }
+
+    /* ── Projects ── */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: var(--gap);
+    }
+    .project-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.3rem 1.4rem;
+      display: flex; flex-direction: column;
+      gap: 0.55rem;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .project-card:hover {
+      border-color: var(--muted);
+      transform: translateY(-2px);
+    }
+    .project-card h3 { font-size: 1.05rem; font-weight: 600; }
+    .project-card p { font-size: 0.9rem; color: var(--muted); flex: 1; }
+    .project-card .tags {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem;
+    }
+    .project-card .tags span {
+      font-size: 0.72rem;
+      font-family: var(--mono);
+      color: var(--accent);
+      background: rgba(88,166,255,0.1);
+      border: 1px solid rgba(88,166,255,0.2);
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+    }
+    .project-card a { font-size: 0.88rem; margin-top: 0.3rem; }
+
+    /* ── Skills ── */
+    .skills-list {
+      display: flex; flex-wrap: wrap; gap: 0.55rem;
+    }
+    .skill-pill {
+      font-size: 0.88rem;
+      font-family: var(--mono);
+      color: var(--text);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius);
+      transition: border-color 0.15s;
+    }
+    .skill-pill:hover { border-color: var(--accent); }
+
+    /* ── Contact ── */
+    #contact a { font-weight: 600; }
+    #contact .links { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 0;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      nav ul { gap: 1rem; }
+      #hero { padding: 4rem 0 3rem; }
+      .btn-ghost { margin-left: 0; margin-top: 0.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">&lt;Moss<span>IV</span>/&gt;</div>
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="container">
+      <h1>Hi, I'm <span class="accent">Wa Ben Wong</span>.</h1>
+      <p class="tagline">
+        <!-- PLACEHOLDER: Replace with your one-line tagline.
+             e.g. "A software engineering student building tools that are fast, usable, and actually fun." -->
+        Post graduate student at the University of Auckland, studying Masters of Information Technology with a BE(Hons) in Software Engineering. I am passionate about how we are integrating and using AI to build software that is fast, usable, and scalable.
+      </p>
+      <div>
+        <a class="btn btn-primary" href="#projects">View my work</a>
+        <a class="btn btn-ghost" href="#contact">Get in touch</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="container">
+      <h2 class="section-title">About</h2>
+      <p>
+        <!-- PLACEHOLDER: Write 2-4 sentences about yourself.
+             What are you studying / working on? What drives you?
+             Remove this HTML comment when done. -->
+        I'm a student and builder focused on
+        AI, Software engineering and system design.
+        I care about clean, readable and easy to understand code that is robust and maintainable. Currently based in Auckland and
+        always open to job opportunities to learn and apply my skills.
+      </p>
+      <div class="meta">
+        <span>📍 Auckland</span>
+        <span>🎓 BE(Hons) in Software Engineering</span>
+        <span>💼 Open to roles 2026/27</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="container">
+      <h2 class="section-title">Projects</h2>
+      <div class="projects-grid">
+
+        <!-- Project 1 — Discord Bot -->
+        <article class="project-card">
+          <h3>Discord Bot</h3>
+          <p>
+            A Python music bot for Discord that streams audio using
+            <strong>yt-dlp</strong> and <strong>discord.py</strong>,
+            with <strong>PyNaCl</strong> for voice encoding and
+            <strong>ffmpeg</strong> for audio processing.
+            Handles playlists, search, and queue management.
+          </p>
+          <div class="tags">
+            <span>Python</span>
+            <span>discord.py</span>
+            <span>yt-dlp</span>
+            <span>PyNaCl</span>
+            <span>ffmpeg</span>
+          </div>
+          <a href="https://github.com/MossIV/Discord-Bot" target="_blank" rel="noopener">View on GitHub →</a>
+        </article>
+
+        <!-- Project 2 — Jeopardy Game -->
+        <article class="project-card">
+          <h3>Jeopardy</h3>
+          <p>
+            A browser-based Jeopardy game built with vanilla
+            <strong>JavaScript</strong>, <strong>CSS</strong>, and
+            <strong>HTML</strong>. Features a game board, scoring,
+            and interactive question rounds.
+          </p>
+          <div class="tags">
+            <span>JavaScript</span>
+            <span>CSS</span>
+            <span>HTML</span>
+          </div>
+          <a href="https://github.com/MossIV/Jeopardy" target="_blank" rel="noopener">View on GitHub →</a>
+        </article>
+
+        <!-- Project 3 — C# Side Projects -->
+        <article class="project-card">
+          <h3>C# Side Projects</h3>
+          <p>
+            A collection of side projects built with <strong>C#</strong>
+            covering desktop and console applications. Demonstrates
+            object-oriented design, event-driven architecture, and
+            .NET ecosystem tooling.
+          </p>
+          <div class="tags">
+            <span>C#</span>
+            <span>.NET</span>
+            <span>OOP</span>
+          </div>
+          <a href="https://github.com/MossIV/cSharpProjects" target="_blank" rel="noopener">View on GitHub →</a>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="container">
+      <h2 class="section-title">Skills</h2>
+      <div class="skills-list">
+        <span class="skill-pill">Python</span>
+        <span class="skill-pill">C# / .NET</span>
+        <span class="skill-pill">Kotlin</span>
+        <span class="skill-pill">JavaScript</span>
+        <span class="skill-pill">HTML & CSS</span>
+        <span class="skill-pill">Docker</span>
+        <span class="skill-pill">discord.py</span>
+        <span class="skill-pill">yt-dlp</span>
+        <span class="skill-pill">ffmpeg</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="container">
+      <h2 class="section-title">Contact</h2>
+      <p>
+        I'd love to hear from you — whether it's a project idea,
+        a role opportunity, or just a hello.
+      </p>
+      <div class="links">
+        <a href="mailto:waben.wong@gmail.com">📧 Email</a>
+        <a href="https://github.com/MossIV" target="_blank" rel="noopener">🐙 GitHub</a>
+        <a href="https://linkedin.com/in/wa-ben-wong" target="_blank" rel="noopener">💼 LinkedIn</a>
+        <a href="https://mossiv.github.io" target="_blank" rel="noopener">🌐 Website</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+      © <span id="year"></span> Wa Ben Wong — Built with HTML &amp; CSS.
+    </div>
+  </footer>
+
+  <script>
+    // Auto-update the copyright year
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+
+</body>
+</html>
