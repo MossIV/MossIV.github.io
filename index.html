@@ -4,15 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MossIV - Wa Ben Wong</title>
+  <meta name="description" content="Wa Ben Wong - postgraduate software engineering student in Auckland. Projects in TypeScript, Python, C#, Kotlin and VHDL." />
   <link rel="icon" href="assets/favicon.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
 
   <!-- NAV -->
-  <nav>
+  <nav id="nav">
     <div class="nav-inner">
-      <div class="logo"><a href="#hero" style="color:inherit;text-decoration:none;"><span style="color:inherit;">&lt;Moss</span><span>IV</span><span style="color:inherit;">/&gt;</span></a></div>
+      <a class="logo" href="#hero">&lt;Moss<span>IV</span>/&gt;</a>
       <ul>
         <li><a href="#about">About</a></li>
         <li><a href="#projects">Projects</a></li>
@@ -23,34 +27,50 @@
     </div>
   </nav>
 
-  <!-- HERO -->
-  <section id="hero">
-    <div class="container">
-      <h1>Hi, I'm <span class="accent">Wa Ben Wong</span>.</h1>
-      <p class="tagline">
-        <!-- PLACEHOLDER: Replace with your one-line tagline.
-             e.g. "A software engineering student building tools that are fast, usable, and actually fun." -->
-        Postgraduate student at the University of Auckland, studying Masters of Information Technology with a BE(Hons) in Software Engineering. I am passionate about how we are integrating and using AI to build software that is fast, usable, and scalable.
-      </p>
-      <div>
+  <!-- HERO — Unicorn Studio scene as the landing background -->
+  <header id="hero">
+    <div class="hero-poster" aria-hidden="true"></div>
+    <div class="hero-scene"
+         data-us-project="rhTY4cAtjyZPhDDS96Ng"
+         data-us-dpi="1.5"
+         data-us-disablemobile="true"
+         data-us-alttext="Animated circuit board radiating from a glowing beacon on a dark background"
+         data-us-arialabel="Decorative animated circuit background"></div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+
+    <div class="hero-inner">
+      <!-- Fallback identity — visible when the scene is not running -->
+      <div class="hero-fallback">
+        <p class="hero-kicker">Auckland · Software Engineering</p>
+        <h1>Wa Ben&nbsp;Wong</h1>
+        <p class="hero-lines">Creative Problem Solver<br />AI Forward Thinker<br />Passionate Tinkerer</p>
+      </div>
+
+      <div class="hero-actions">
         <a class="btn btn-primary" href="#projects">View my work</a>
         <a class="btn btn-ghost" href="#contact">Get in touch</a>
       </div>
     </div>
-  </section>
+
+    <a class="hero-cue" href="#about" aria-label="Scroll to about">
+      <span class="hero-cue-label">scroll</span>
+      <span class="hero-cue-line" aria-hidden="true"></span>
+    </a>
+  </header>
 
   <!-- ABOUT -->
   <section id="about">
     <div class="container">
       <h2 class="section-title">About</h2>
-      <p>
-        <!-- PLACEHOLDER: Write 2-4 sentences about yourself.
-             What are you studying / working on? What drives you?
-             Remove this HTML comment when done. -->
-        I'm a student and builder focused on
-        AI, Software engineering and system design.
-        I care about clean, readable and easy to understand code that is robust and maintainable. Currently based in Auckland and
-        always open to job opportunities to learn and apply my skills.
+      <p class="lede">
+        Postgraduate student at the University of Auckland, studying Masters of Information
+        Technology with a BE(Hons) in Software Engineering. I am passionate about how we are
+        integrating and using AI to build software that is fast, usable, and scalable.
+      </p>
+      <p class="lede">
+        I'm a student and builder focused on AI, software engineering and system design.
+        I care about clean, readable and easy to understand code that is robust and maintainable.
+        Currently based in Auckland and always open to job opportunities to learn and apply my skills.
       </p>
       <div class="meta">
         <span>📍 Auckland</span>
@@ -285,7 +305,10 @@
         a role opportunity, or just a hello.
       </p>
       <div class="links">
-        <a href="mailto:waben.wong@gmail.com">📧 Email</a>
+        <a href="mailto:waben.wong@gmail.com" aria-label="Email">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="20" height="20" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg>
+          Email
+        </a>
         <a href="https://github.com/MossIV" target="_blank" rel="noopener" aria-label="GitHub">
           <svg class="icon" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
           GitHub
@@ -307,8 +330,82 @@
   </footer>
 
   <script>
-    // Auto-update the copyright year
+    // ── Copyright year ──
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ── Nav: solidify once the hero has been scrolled past ──
+    (function () {
+      var nav = document.getElementById('nav');
+      var onScroll = function () { nav.classList.toggle('is-scrolled', window.scrollY > 40); };
+      onScroll();
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
+
+    // ── Reveal cards as they scroll in ──
+    (function () {
+      var items = document.querySelectorAll('.project-card');
+      if (!('IntersectionObserver' in window)) {
+        items.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          var el = e.target;
+          window.setTimeout(function () { el.classList.add('is-visible'); }, 40);
+          io.unobserve(el);
+        });
+      }, { rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
+      items.forEach(function (el) { io.observe(el); });
+    })();
+
+    // ── Highlight the section being read ──
+    (function () {
+      var links = Array.prototype.slice.call(document.querySelectorAll('nav ul a'));
+      var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+      if (!('IntersectionObserver' in window)) return;
+      var spy = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          links.forEach(function (a, i) { a.classList.toggle('is-active', sections[i] === e.target); });
+        });
+      }, { rootMargin: '-45% 0px -50% 0px' });
+      sections.forEach(function (s) { if (s) spy.observe(s); });
+    })();
+
+    // ── Unicorn Studio landing scene ──
+    // Skipped for reduced motion, small screens and browsers without WebGL2 —
+    // the CSS poster and HTML fallback identity carry the hero in those cases.
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var small = window.matchMedia('(max-width: 820px)').matches;
+      var webgl2 = (function () {
+        try { return !!document.createElement('canvas').getContext('webgl2'); }
+        catch (e) { return false; }
+      })();
+
+      if (reduce || small || !webgl2) {
+        document.documentElement.classList.add('no-scene');
+        return;
+      }
+
+      var start = function () { window.UnicornStudio.init(); };
+      var u = window.UnicornStudio;
+      if (u && u.init) {
+        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); }
+        else { start(); }
+      } else {
+        window.UnicornStudio = { isInitialized: false };
+        var i = document.createElement('script');
+        i.src = 'https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.3.0/dist/unicornStudio.umd.js';
+        i.onload = function () {
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () { window.UnicornStudio.init(); });
+          } else { window.UnicornStudio.init(); }
+        };
+        (document.head || document.body).appendChild(i);
+      }
+    })();
   </script>
 
 </body>
