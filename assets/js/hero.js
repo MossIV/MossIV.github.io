@@ -16,9 +16,10 @@
 
   var TEAL = '79, 227, 207';
   var W = 0, H = 0, dpr = 1;
-  var lanes = [];   // circuit traces
-  var fan = [];     // beams converging on the beacon
-  var nodes = [];   // junction dots
+  var rows = [];    // perspective grid: the horizontal lines
+  var cols = [];    // perspective grid: lines converging on the beacon
+  var fan = [];     // beams converging on the beacon from above
+  var nodes = [];   // junction dots at grid crossings
   var cx = 0, cy = 0;
   var charge = 0;   // 0..1 — how close an arriving packet is to the core
 
@@ -26,19 +27,6 @@
   var frameGap = 1000 / TARGET_FPS;
 
   /* ── Geometry ───────────────────────────────────────────── */
-
-  // A trace enters from an edge, runs parallel to the horizon, then takes a
-  // 45-degree jog into the beacon — the same rule as the original scene.
-  function tracePoints(dy, side, gap, offset) {
-    var y0 = cy + dy + offset;
-    var jog = Math.abs(dy);
-    var p1x = cx - gap - jog;
-    if (p1x < 0) p1x = 0;
-    var pts = side < 0
-      ? [[0, y0], [p1x, y0], [cx - gap, cy + offset], [cx, cy + offset]]
-      : [[W, y0], [W - p1x, y0], [cx + gap, cy + offset], [cx, cy + offset]];
-    return pts;
-  }
 
   function measure(pts) {
     var total = 0, acc = [0];
@@ -69,44 +57,51 @@
   }
 
   function build() {
-    lanes = [];
+    rows = [];
+    cols = [];
     fan = [];
     nodes = [];
 
     cx = W * 0.5;
     cy = H * 0.62;
 
-    var gap = Math.max(18, W * 0.02);
-    // A bus of parallel runs per level, which is what gives the lower half its
-    // grid look. Levels stay inside the viewport; the runs within a level are
-    // spaced 8-14px apart so they read as a deliberate bus rather than a
-    // smear. Every run is stroked exactly once (the earlier doubled look was a
-    // spurious chord in pointAt, not the spacing).
-    var depth = [0.045, 0.10, 0.165, 0.235, 0.31];
+    // ── Perspective floor grid ──────────────────────────────
+    // Horizon sits on the beacon, so the columns converge exactly where the
+    // fan beams do: beams gathering from above, floor receding below, one
+    // meeting point. The floor runs from the horizon to the bottom edge.
+    var floorDepth = Math.max(1, H - cy);
 
-    for (var i = 0; i < depth.length; i++) {
-      var dy = depth[i] * H;
-      var runs = i < 2 ? 3 : 2;               // denser bus on the shallow levels
-      var step = i < 2 ? 12 : 10;             // spacing between runs in the bus
-      for (var k = 0; k < runs; k++) {
-        var offset = (k - (runs - 1) / 2) * step;
-        [-1, 1].forEach(function (side) {
-          var pts = tracePoints(dy, side, gap, offset);
-          lanes.push({
-            pts: pts,
-            m: measure(pts),
-            // the outermost runs of each level are dimmer, so the bus has depth
-            dim: (0.09 + 0.28 * (1 - i / depth.length)) * (k === 0 || k === runs - 1 ? 0.72 : 1),
-            pulses: [Math.random(), Math.random() * 0.6 + 0.2]
-          });
-        });
-      }
-      // junction dots sit on the horizontal run, never dead centre
-      [-1, 1].forEach(function (side) {
-        var x = side < 0 ? W * (0.07 + 0.075 * i) : W * (0.93 - 0.075 * i);
-        nodes.push({ x: x, y: cy + dy, r: i < 2 ? 2.0 : 1.4, phase: Math.random() * 6.28 });
+    // Rows: full-width lines, spaced geometrically so they crowd toward the
+    // horizon the way a receding floor does.
+    var ROWS = 11;
+    for (var r = 0; r < ROWS; r++) {
+      var t = Math.pow(0.80, r);           // 1 at the near edge -> 0 at the horizon
+      rows.push({ y: cy + floorDepth * t, near: t });
+    }
+
+    // Columns: straight lines from the beacon down to evenly spaced points on
+    // the near edge. Every one of them passes through the vanishing point at
+    // the beacon, which is what makes the floor read as perspective.
+    var each = 10;                          // columns either side of centre
+    var edgeSpacing = W * 0.085;
+    for (var j = -each; j <= each; j++) {
+      var pts = [[cx, cy], [cx + j * edgeSpacing, H]];
+      cols.push({
+        pts: pts,
+        m: measure(pts),
+        dim: 0.30 - 0.18 * Math.min(1, Math.abs(j) / each),
+        pulses: [Math.random(), Math.random() * 0.7]
       });
     }
+
+    // Junction dots where a row crosses a column
+    [2, 4, 6].forEach(function (ri) {
+      [-3, 0, 3].forEach(function (j) {
+        var y = rows[ri].y;
+        var x = cx + (j * edgeSpacing) * ((y - cy) / floorDepth);
+        nodes.push({ x: x, y: y, r: 1.6, phase: Math.random() * 6.28 });
+      });
+    });
 
     // Beams rising off the beacon, splayed like a fan.
     var beams = 13;
@@ -186,28 +181,42 @@
     ctx.stroke();
   }
 
-  function drawLane(lane, time) {
-    var len = lane.m.total;
-    // outer run flat, inner stretch brightening on the way in — disjoint
-    // ranges, so each stretch of the trace is stroked exactly once
-    strokeRange(lane.pts, lane.m, 0, len * 0.7, 1, lane.dim);
-    strokeRamp(lane.pts, lane.m, len * 0.7, len, 1, lane.dim, lane.dim * 3.4);
+  function drawRow(row) {
+    // Brighter toward the horizon, so the floor dims as it recedes toward the
+    // viewer, and brightest across the middle where the beacon sits.
+    var base = 0.10 + 0.26 * (1 - row.near);
+    var g = ctx.createLinearGradient(0, row.y, W, row.y);
+    g.addColorStop(0, 'rgba(' + TEAL + ',' + (base * 0.30).toFixed(3) + ')');
+    g.addColorStop(0.5, 'rgba(' + TEAL + ',' + base.toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(' + TEAL + ',' + (base * 0.30).toFixed(3) + ')');
+    ctx.strokeStyle = g;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, row.y);
+    ctx.lineTo(W, row.y);
+    ctx.stroke();
+  }
 
-    // packets of light pulled inward: they accelerate and brighten as they
-    // close on the core, then re-enter at the rim dim
-    for (var p = 0; p < lane.pulses.length; p++) {
-      var u = (lane.pulses[p] + time * 0.000065 * (1 + p * 0.55)) % 1;
-      var travel = Math.pow(u, 1.35);                     // most of the run happens late
-      // d grows from 0 at the rim to len at the core: the packet converges
-      var pt = pointAt(lane.pts, lane.m, len * travel);
-      var lum = Math.pow(u, 1.7) * Math.min(1, u / 0.08); // no pop at the rim
+  function drawCol(col, time) {
+    var len = col.m.total;
+    // lit at the beacon end, dimmer out at the near edge
+    strokeRamp(col.pts, col.m, 0, len, 1, Math.min(1, col.dim * 2.2), col.dim * 0.5);
+
+    // packets run up the column toward the vanishing point: they accelerate
+    // and brighten as they close on the core
+    for (var p = 0; p < col.pulses.length; p++) {
+      var u = (col.pulses[p] + time * 0.00007 * (1 + p * 0.5)) % 1;
+      var travel = Math.pow(u, 1.35);
+      // d = 0 is the beacon end, so travel inward means shrinking d
+      var pt = pointAt(col.pts, col.m, len * (1 - travel));
+      var lum = Math.pow(u, 1.7) * Math.min(1, u / 0.08);
       charge = Math.max(charge, Math.pow(u, 5));
       ctx.globalAlpha = 0.18 + lum * 0.82;
-      glow(pt.x, pt.y, 9 + 16 * lum, 0.08 + 0.55 * lum);
+      glow(pt.x, pt.y, 8 + 14 * lum, 0.07 + 0.5 * lum);
       ctx.globalAlpha = 1;
       ctx.fillStyle = 'rgba(190, 255, 246,' + (0.12 + 0.78 * lum).toFixed(3) + ')';
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 1.1 + 1.4 * lum, 0, 6.2832);
+      ctx.arc(pt.x, pt.y, 1.1 + 1.3 * lum, 0, 6.2832);
       ctx.fill();
     }
   }
@@ -291,7 +300,8 @@
     ctx.clearRect(0, 0, W, H);
 
     charge = 0;   // rebuilt each frame from how close packets are to the core
-    for (var i = 0; i < lanes.length; i++) drawLane(lanes[i], time);
+    for (var i = 0; i < rows.length; i++) drawRow(rows[i]);
+    for (var c = 0; c < cols.length; c++) drawCol(cols[c], time);
     for (var j = 0; j < fan.length; j++) drawFan(fan[j], time);
     drawBeacon(time);
     drawNodes(time);
