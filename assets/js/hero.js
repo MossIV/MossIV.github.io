@@ -74,27 +74,26 @@
     cy = H * 0.62;
 
     var gap = Math.max(18, W * 0.02);
-    var depth = [0.045, 0.10, 0.165, 0.245, 0.34, 0.45];
+    // One trace per level per side. Levels are spaced well apart so each line
+    // reads as its own run; sub-lanes a few pixels apart just looked like
+    // doubled lines. Kept inside the viewport as well.
+    var depth = [0.045, 0.10, 0.165, 0.24, 0.32];
 
     for (var i = 0; i < depth.length; i++) {
       var dy = depth[i] * H;
-      var lanesHere = i < 2 ? 3 : 2;   // denser traces near the beacon
-      for (var k = 0; k < lanesHere; k++) {
-        var offset = (k - (lanesHere - 1) / 2) * 9;
-        [-1, 1].forEach(function (side) {
-          var pts = tracePoints(dy, side, gap, offset);
-          lanes.push({
-            pts: pts,
-            m: measure(pts),
-            dim: 0.06 + 0.30 * (1 - i / depth.length),
-            pulses: [Math.random(), Math.random() * 0.6 + 0.2]
-          });
+      [-1, 1].forEach(function (side) {
+        var pts = tracePoints(dy, side, gap, 0);
+        lanes.push({
+          pts: pts,
+          m: measure(pts),
+          dim: 0.07 + 0.30 * (1 - i / depth.length),
+          pulses: [Math.random(), Math.random() * 0.6 + 0.2]
         });
-      }
+      });
       // junction dots sit on the horizontal run, never dead centre
       [-1, 1].forEach(function (side) {
-        var x = side < 0 ? W * (0.06 + 0.09 * i) : W * (0.94 - 0.09 * i);
-        nodes.push({ x: x, y: cy + dy, r: i < 2 ? 2.1 : 1.5, phase: Math.random() * 6.28 });
+        var x = side < 0 ? W * (0.07 + 0.075 * i) : W * (0.93 - 0.075 * i);
+        nodes.push({ x: x, y: cy + dy, r: i < 2 ? 2.0 : 1.4, phase: Math.random() * 6.28 });
       });
     }
 
@@ -136,19 +135,29 @@
     ctx.fill();
   }
 
-  function strokePoly(pts, width, alpha) {
+  // Strokes the stretch of a polyline between two distances at a flat alpha.
+  function strokeRange(pts, m, d0, d1, width, alpha) {
+    if (!isFinite(d0) || !isFinite(d1) || d1 <= d0 || !(alpha > 0)) return;
     ctx.beginPath();
-    ctx.moveTo(pts[0][0], pts[0][1]);
-    for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    var head = pointAt(pts, m, d0);
+    ctx.moveTo(head.x, head.y);
+    var steps = 18;
+    for (var i = 1; i <= steps; i++) {
+      var p = pointAt(pts, m, d0 + (d1 - d0) * (i / steps));
+      ctx.lineTo(p.x, p.y);
+    }
     ctx.lineWidth = width;
     ctx.strokeStyle = 'rgba(' + TEAL + ',' + alpha + ')';
     ctx.stroke();
   }
 
-  // Strokes the stretch of a polyline between two distances, fading from one
-  // alpha to another. Used to make traces brighten as they near the beacon.
+  // Same, but fading between two alphas. Callers draw disjoint ranges so no
+  // stretch of a trace is ever stroked twice — overlapping passes with
+  // different widths read as a doubled line.
   function strokeRamp(pts, m, d0, d1, width, a0, a1) {
     if (!isFinite(d0) || !isFinite(d1) || d1 <= d0) return;
+    a0 = Math.min(1, Math.max(0, a0));
+    a1 = Math.min(1, Math.max(0, a1));
     var head = pointAt(pts, m, d0);
     var tail = pointAt(pts, m, d1);
     var g = ctx.createLinearGradient(head.x, head.y, tail.x, tail.y);
@@ -167,16 +176,16 @@
   }
 
   function drawLane(lane, time) {
-    strokePoly(lane.pts, 1, lane.dim);
-
-    // traces pick up light on the run into the beacon
     var len = lane.m.total;
-    strokeRamp(lane.pts, lane.m, len * 0.7, len, 1.2, 0, lane.dim * 3.4);
+    // outer run flat, inner stretch brightening on the way in — disjoint
+    // ranges, so each stretch of the trace is stroked exactly once
+    strokeRange(lane.pts, lane.m, 0, len * 0.7, 1, lane.dim);
+    strokeRamp(lane.pts, lane.m, len * 0.7, len, 1, lane.dim, lane.dim * 3.4);
 
     // packets of light pulled inward: they accelerate and brighten as they
     // close on the core, then re-enter at the rim dim
     for (var p = 0; p < lane.pulses.length; p++) {
-      var u = (lane.pulses[p] + time * 0.00013 * (1 + p * 0.55)) % 1;
+      var u = (lane.pulses[p] + time * 0.000065 * (1 + p * 0.55)) % 1;
       var travel = Math.pow(u, 1.35);                     // most of the run happens late
       // d grows from 0 at the rim to len at the core: the packet converges
       var pt = pointAt(lane.pts, lane.m, len * travel);
@@ -193,11 +202,12 @@
   }
 
   function drawFan(beam, time) {
-    strokePoly(beam.pts, 1, beam.dim * 0.8);
-    strokeRamp(beam.pts, beam.m, beam.m.total * 0.45, beam.m.total, 1, beam.dim * 2.6, 0);
+    // inner half flat, outer half fading to the tip — disjoint ranges again
+    strokeRange(beam.pts, beam.m, 0, beam.m.total * 0.45, 1, beam.dim * 0.8);
+    strokeRamp(beam.pts, beam.m, beam.m.total * 0.45, beam.m.total, 1, beam.dim * 2.0, 0);
 
     // markers fall from the rim down onto the beacon
-    var u = (beam.pulses[0] + time * beam.dot.speed * 5) % 1;
+    var u = (beam.pulses[0] + time * beam.dot.speed * 2.5) % 1;
     var travel = Math.pow(u, 1.4);
     var pt = pointAt(beam.pts, beam.m, beam.m.total * (1 - travel));
     var lum = Math.pow(u, 1.6) * Math.min(1, u / 0.1);
@@ -227,7 +237,7 @@
 
     // rings fall inward and brighten as they close on the core
     for (var i = 0; i < 3; i++) {
-      var u = ((time * 0.00022 + i / 3) % 1);
+      var u = ((time * 0.00011 + i / 3) % 1);
       var r = 22 + (1 - u) * Math.min(W, H) * 0.40;
       var a = 0.04 + 0.26 * Math.pow(u, 1.6);
       ctx.strokeStyle = 'rgba(' + TEAL + ',' + a.toFixed(3) + ')';
