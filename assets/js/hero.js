@@ -76,7 +76,12 @@
     var ROWS = 11;
     for (var r = 0; r < ROWS; r++) {
       var t = Math.pow(0.80, r);           // 1 at the near edge -> 0 at the horizon
-      rows.push({ y: cy + floorDepth * t, near: t });
+      rows.push({
+        y: cy + floorDepth * t,
+        near: t,
+        // one packet per side, arriving along the row from the left and right
+        pulses: [{ side: -1, phase: Math.random() }, { side: 1, phase: Math.random() }]
+      });
     }
 
     // Columns: straight lines from the beacon down to evenly spaced points on
@@ -181,7 +186,7 @@
     ctx.stroke();
   }
 
-  function drawRow(row) {
+  function drawRow(row, time) {
     // Brighter toward the horizon, so the floor dims as it recedes toward the
     // viewer, and brightest across the middle where the beacon sits.
     var base = 0.10 + 0.26 * (1 - row.near);
@@ -195,6 +200,24 @@
     ctx.moveTo(0, row.y);
     ctx.lineTo(W, row.y);
     ctx.stroke();
+
+    // Packets sliding in along the row from both side lines, accelerating and
+    // brightening as they close on the centre column.
+    for (var p = 0; p < row.pulses.length; p++) {
+      var q = row.pulses[p];
+      var u = (q.phase + time * 0.00005) % 1;
+      var travel = Math.pow(u, 1.35);
+      var x = q.side < 0 ? cx * travel : W - (W - cx) * travel;
+      var lum = Math.pow(u, 1.7) * Math.min(1, u / 0.08);   // no pop at the edge
+      charge = Math.max(charge, Math.pow(u, 6));
+      ctx.globalAlpha = 0.18 + lum * 0.82;
+      glow(x, row.y, 7 + 12 * lum, 0.06 + 0.45 * lum);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(190, 255, 246,' + (0.12 + 0.75 * lum).toFixed(3) + ')';
+      ctx.beginPath();
+      ctx.arc(x, row.y, 1.0 + 1.2 * lum, 0, 6.2832);
+      ctx.fill();
+    }
   }
 
   function drawCol(col, time) {
@@ -300,7 +323,7 @@
     ctx.clearRect(0, 0, W, H);
 
     charge = 0;   // rebuilt each frame from how close packets are to the core
-    for (var i = 0; i < rows.length; i++) drawRow(rows[i]);
+    for (var i = 0; i < rows.length; i++) drawRow(rows[i], time);
     for (var c = 0; c < cols.length; c++) drawCol(cols[c], time);
     for (var j = 0; j < fan.length; j++) drawFan(fan[j], time);
     drawBeacon(time);
