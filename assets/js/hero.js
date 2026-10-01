@@ -17,9 +17,10 @@
   var TEAL = '79, 227, 207';
   var W = 0, H = 0, dpr = 1;
   var lanes = [];   // circuit traces
-  var fan = [];     // beams rising from the beacon
+  var fan = [];     // beams converging on the beacon
   var nodes = [];   // junction dots
   var cx = 0, cy = 0;
+  var charge = 0;   // 0..1 — how close an arriving packet is to the core
 
   var TARGET_FPS = 32;
   var frameGap = 1000 / TARGET_FPS;
@@ -144,61 +145,92 @@
     ctx.stroke();
   }
 
+  // Strokes the stretch of a polyline between two distances, fading from one
+  // alpha to another. Used to make traces brighten as they near the beacon.
+  function strokeRamp(pts, m, d0, d1, width, a0, a1) {
+    if (!isFinite(d0) || !isFinite(d1) || d1 <= d0) return;
+    var head = pointAt(pts, m, d0);
+    var tail = pointAt(pts, m, d1);
+    var g = ctx.createLinearGradient(head.x, head.y, tail.x, tail.y);
+    g.addColorStop(0, 'rgba(' + TEAL + ',' + a0 + ')');
+    g.addColorStop(1, 'rgba(' + TEAL + ',' + a1 + ')');
+    ctx.beginPath();
+    ctx.moveTo(head.x, head.y);
+    var steps = 18;
+    for (var i = 1; i <= steps; i++) {
+      var p = pointAt(pts, m, d0 + (d1 - d0) * (i / steps));
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.lineWidth = width;
+    ctx.strokeStyle = g;
+    ctx.stroke();
+  }
+
   function drawLane(lane, time) {
     strokePoly(lane.pts, 1, lane.dim);
 
-    // a packet of light travelling toward the beacon
+    // traces pick up light on the run into the beacon
+    var len = lane.m.total;
+    strokeRamp(lane.pts, lane.m, len * 0.7, len, 1.2, 0, lane.dim * 3.4);
+
+    // packets of light pulled inward: they accelerate and brighten as they
+    // close on the core, then re-enter at the rim dim
     for (var p = 0; p < lane.pulses.length; p++) {
-      var u = (lane.pulses[p] + time * 0.00004 * (1 + p * 0.4)) % 1;
-      var d = lane.m.total * (1 - u);            // inward: total -> 0
-      var pt = pointAt(lane.pts, lane.m, d);
-      var fade = Math.sin(Math.PI * u);          // ease in and out at the ends
-      ctx.globalAlpha = 0.25 + fade * 0.75;
-      glow(pt.x, pt.y, 16, 0.30 * fade + 0.06);
+      var u = (lane.pulses[p] + time * 0.00013 * (1 + p * 0.55)) % 1;
+      var travel = Math.pow(u, 1.35);                     // most of the run happens late
+      // d grows from 0 at the rim to len at the core: the packet converges
+      var pt = pointAt(lane.pts, lane.m, len * travel);
+      var lum = Math.pow(u, 1.7) * Math.min(1, u / 0.08); // no pop at the rim
+      charge = Math.max(charge, Math.pow(u, 5));
+      ctx.globalAlpha = 0.18 + lum * 0.82;
+      glow(pt.x, pt.y, 9 + 16 * lum, 0.08 + 0.55 * lum);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(190, 255, 246,' + (0.5 * fade + 0.2) + ')';
+      ctx.fillStyle = 'rgba(190, 255, 246,' + (0.12 + 0.78 * lum).toFixed(3) + ')';
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 1.7, 0, 6.2832);
+      ctx.arc(pt.x, pt.y, 1.1 + 1.4 * lum, 0, 6.2832);
       ctx.fill();
     }
   }
 
   function drawFan(beam, time) {
-    strokePoly(beam.pts, 1, beam.dim);
+    strokePoly(beam.pts, 1, beam.dim * 0.8);
+    strokeRamp(beam.pts, beam.m, beam.m.total * 0.45, beam.m.total, 1, beam.dim * 2.6, 0);
 
-    // each beam carries a marker drifting outward
-    var u = (beam.pulses[0] + time * beam.dot.speed) % 1;
-    var pt = pointAt(beam.pts, beam.m, beam.m.total * u);
-    var fade = Math.sin(Math.PI * u);
-    glow(pt.x, pt.y, 14, 0.22 * fade + 0.04);
-    ctx.fillStyle = 'rgba(190, 255, 246,' + (0.55 * fade + 0.25) + ')';
+    // markers fall from the rim down onto the beacon
+    var u = (beam.pulses[0] + time * beam.dot.speed * 5) % 1;
+    var travel = Math.pow(u, 1.4);
+    var pt = pointAt(beam.pts, beam.m, beam.m.total * (1 - travel));
+    var lum = Math.pow(u, 1.6) * Math.min(1, u / 0.1);
+    glow(pt.x, pt.y, 8 + 12 * lum, 0.06 + 0.5 * lum);
+    ctx.fillStyle = 'rgba(190, 255, 246,' + (0.10 + 0.8 * lum).toFixed(3) + ')';
     ctx.beginPath();
-    ctx.arc(pt.x, pt.y, beam.dot.r, 0, 6.2832);
+    ctx.arc(pt.x, pt.y, (0.9 + 1.2 * lum) * beam.dot.r, 0, 6.2832);
     ctx.fill();
 
-    // the fixed lamp at the tip of the beam
+    // faint station lamp at the rim — the outside is the dim end
     var last = beam.pts[beam.pts.length - 1];
-    var tip = { x: last[0], y: last[1] };
-    var pulse = 0.55 + 0.45 * Math.sin(time * 0.0012 + beam.pulses[1] * 6.28);
-    glow(tip.x, tip.y, 9, 0.20 * pulse);
-    ctx.fillStyle = 'rgba(200, 255, 248,' + (0.35 + 0.35 * pulse) + ')';
+    ctx.fillStyle = 'rgba(150, 235, 225, 0.28)';
     ctx.beginPath();
-    ctx.arc(tip.x, tip.y, beam.dot.r, 0, 6.2832);
+    ctx.arc(last[0], last[1], beam.dot.r * 0.75, 0, 6.2832);
     ctx.fill();
   }
 
   function drawBeacon(time) {
     var breath = 0.75 + 0.25 * Math.sin(time * 0.0009);
+    // arriving packets charge the core, so the peak comes from the flow
+    var surge = 0.85 + 0.6 * charge;
 
-    glow(cx, cy, Math.min(W, H) * 0.62, 0.16 * breath);
-    glow(cx, cy, Math.min(W, H) * 0.26, 0.22 * breath);
-    glow(cx, cy, 64, 0.42 * breath);
+    glow(cx, cy, Math.min(W, H) * 0.55, 0.13 * breath * surge);
+    glow(cx, cy, Math.min(W, H) * 0.24, 0.20 * breath * surge);
+    glow(cx, cy, 70, 0.36 * breath * surge);
+    glow(cx, cy, 24 + 18 * charge, 0.30 * surge);
 
-    // expanding rings
+    // rings fall inward and brighten as they close on the core
     for (var i = 0; i < 3; i++) {
-      var u = ((time * 0.00016 + i / 3) % 1);
-      var r = 20 + u * Math.min(W, H) * 0.42;
-      ctx.strokeStyle = 'rgba(' + TEAL + ',' + (0.16 * (1 - u)).toFixed(3) + ')';
+      var u = ((time * 0.00022 + i / 3) % 1);
+      var r = 22 + (1 - u) * Math.min(W, H) * 0.40;
+      var a = 0.04 + 0.26 * Math.pow(u, 1.6);
+      ctx.strokeStyle = 'rgba(' + TEAL + ',' + a.toFixed(3) + ')';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, 6.2832);
@@ -206,9 +238,10 @@
     }
 
     // filament core
-    ctx.fillStyle = 'rgba(226, 255, 252,' + (0.75 + 0.25 * breath) + ')';
+    var core = Math.min(1, (0.7 + 0.3 * breath) * (0.8 + 0.4 * charge));
+    ctx.fillStyle = 'rgba(226, 255, 252,' + core.toFixed(3) + ')';
     ctx.beginPath();
-    ctx.arc(cx, cy, 2.6, 0, 6.2832);
+    ctx.arc(cx, cy, 2.4 + 1.8 * charge, 0, 6.2832);
     ctx.fill();
 
     // the horizon the traces run along
@@ -224,8 +257,9 @@
     for (var i = 0; i < nodes.length; i++) {
       var n = nodes[i];
       var pulse = 0.5 + 0.5 * Math.sin(time * 0.0016 + n.phase);
-      glow(n.x, n.y, 13, 0.26 * pulse + 0.05);
-      ctx.fillStyle = 'rgba(198, 255, 247,' + (0.4 + 0.5 * pulse) + ')';
+      // kept deliberately dim: the core is the bright end of the flow
+      glow(n.x, n.y, 11, 0.16 * pulse + 0.03);
+      ctx.fillStyle = 'rgba(198, 255, 247,' + (0.26 + 0.34 * pulse).toFixed(3) + ')';
       ctx.beginPath();
       ctx.arc(n.x, n.y, n.r, 0, 6.2832);
       ctx.fill();
@@ -235,6 +269,7 @@
   function render(time) {
     ctx.clearRect(0, 0, W, H);
 
+    charge = 0;   // rebuilt each frame from how close packets are to the core
     for (var i = 0; i < lanes.length; i++) drawLane(lanes[i], time);
     for (var j = 0; j < fan.length; j++) drawFan(fan[j], time);
     drawBeacon(time);
