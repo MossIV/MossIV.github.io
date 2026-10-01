@@ -27,20 +27,14 @@
     </div>
   </nav>
 
-  <!-- HERO — Unicorn Studio scene as the landing background -->
+  <!-- HERO — canvas circuit visual, drawn natively (see assets/js/hero.js) -->
   <header id="hero">
     <div class="hero-poster" aria-hidden="true"></div>
-    <div class="hero-scene"
-         data-us-project="rhTY4cAtjyZPhDDS96Ng"
-         data-us-dpi="1.5"
-         data-us-disablemobile="true"
-         data-us-alttext="Animated circuit board radiating from a glowing beacon on a dark background"
-         data-us-arialabel="Decorative animated circuit background"></div>
+    <canvas id="hero-canvas" class="hero-canvas" aria-hidden="true"></canvas>
     <div class="hero-scrim" aria-hidden="true"></div>
 
     <div class="hero-inner">
-      <!-- Fallback identity — visible when the scene is not running -->
-      <div class="hero-fallback">
+      <div class="hero-identity">
         <p class="hero-kicker">Auckland · Software Engineering</p>
         <h1>Wa Ben&nbsp;Wong</h1>
         <p class="hero-lines">Creative Problem Solver<br />AI Forward Thinker<br />Passionate Tinkerer</p>
@@ -373,40 +367,11 @@
       sections.forEach(function (s) { if (s) spy.observe(s); });
     })();
 
-    // ── Unicorn Studio landing scene ──
-    // Skipped for reduced motion, small screens and browsers without WebGL2 —
-    // the CSS poster and HTML fallback identity carry the hero in those cases.
-    (function () {
-      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var small = window.matchMedia('(max-width: 820px)').matches;
-      var webgl2 = (function () {
-        try { return !!document.createElement('canvas').getContext('webgl2'); }
-        catch (e) { return false; }
-      })();
-
-      if (reduce || small || !webgl2) {
-        document.documentElement.classList.add('no-scene');
-        return;
-      }
-
-      var start = function () { window.UnicornStudio.init(); };
-      var u = window.UnicornStudio;
-      if (u && u.init) {
-        if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', start); }
-        else { start(); }
-      } else {
-        window.UnicornStudio = { isInitialized: false };
-        var i = document.createElement('script');
-        i.src = 'https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v2.3.0/dist/unicornStudio.umd.js';
-        i.onload = function () {
-          if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function () { window.UnicornStudio.init(); });
-          } else { window.UnicornStudio.init(); }
-        };
-        (document.head || document.body).appendChild(i);
-      }
-    })();
+    // ── Hero canvas visual ──
+    // Drawn by assets/js/hero.js — loaded with defer, so nothing to do here.
   </script>
+
+  <script src="assets/js/hero.js" defer></script>
 
 </body>
 </html>

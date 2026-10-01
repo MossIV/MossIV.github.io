@@ -119,43 +119,35 @@ nav ul a:hover::after, nav ul a.is-active::after { width: 100%; }
   position: relative;
   min-height: 100svh;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  padding-top: var(--nav-h);
   overflow: hidden;
   background: var(--bg);
 }
 
-/* CSS poster — sits under the WebGL canvas and carries the hero alone
-   when the scene is skipped (mobile / reduced motion / no WebGL2). */
+/* Ground. The circuit geometry itself is drawn on the canvas above this. */
 .hero-poster {
   position: absolute; inset: 0;
   background:
-    radial-gradient(58% 46% at 50% 58%, rgba(79, 227, 207, 0.22) 0%, rgba(79, 227, 207, 0.05) 42%, transparent 72%),
-    repeating-linear-gradient(90deg, transparent 0 78px, rgba(79, 227, 207, 0.055) 78px 79px),
-    repeating-linear-gradient(0deg, transparent 0 78px, rgba(79, 227, 207, 0.045) 78px 79px),
+    radial-gradient(58% 44% at 50% 62%, rgba(79, 227, 207, 0.10) 0%, transparent 70%),
     linear-gradient(180deg, #04070a 0%, #061013 58%, #05090b 100%);
 }
-.hero-poster::after {
-  content: '';
-  position: absolute; inset: 0;
-  background-image: radial-gradient(circle at 50% 58%, rgba(79, 227, 207, 0.55) 0 1.5px, transparent 2px);
-  background-size: 78px 78px;
-  background-position: 38px 38px;
-  opacity: 0.5;
-  mask-image: radial-gradient(52% 44% at 50% 58%, #000 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(52% 44% at 50% 58%, #000 0%, transparent 70%);
-}
 
-.hero-scene {
+.hero-canvas {
   position: absolute; inset: 0;
   z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
-.hero-scene canvas { display: block; width: 100% !important; height: 100% !important; }
 
-/* Readability scrim: darkens the lower third where the copy sits. */
+/* Readability scrim: darkens the left column where the copy sits and fades
+   the bottom of the hero into the page. */
 .hero-scrim {
   position: absolute; inset: 0; z-index: 2;
   background:
-    linear-gradient(180deg, rgba(5, 9, 11, 0.72) 0%, rgba(5, 9, 11, 0) 22%, rgba(5, 9, 11, 0) 55%, rgba(5, 9, 11, 0.86) 88%, var(--bg) 100%);
+    linear-gradient(90deg, rgba(5, 9, 11, 0.86) 0%, rgba(5, 9, 11, 0.45) 40%, rgba(5, 9, 11, 0) 66%),
+    linear-gradient(180deg, rgba(5, 9, 11, 0.55) 0%, rgba(5, 9, 11, 0) 20%, rgba(5, 9, 11, 0) 62%, rgba(5, 9, 11, 0.7) 92%, var(--bg) 100%);
   pointer-events: none;
 }
 
@@ -166,18 +158,12 @@ nav ul a:hover::after, nav ul a.is-active::after { width: 100%; }
   margin: 0 auto;
   padding: 0 1.5rem 4.5rem;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 2rem;
-  flex-wrap: wrap;
 }
 
-/* Fallback identity — hidden while the scene (which already renders the
-   name and the three taglines) is running. */
-.hero-fallback { display: none; max-width: 34rem; }
-html.no-scene .hero-fallback { display: block; }
-html.no-scene #hero { min-height: 78svh; padding-top: var(--nav-h); }
-html.no-scene .hero-inner { flex-direction: column; align-items: flex-start; gap: 1.75rem; }
+.hero-identity { max-width: 34rem; }
 
 .hero-kicker {
   font-family: var(--mono);
