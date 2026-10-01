@@ -77,22 +77,30 @@
     cy = H * 0.62;
 
     var gap = Math.max(18, W * 0.02);
-    // One trace per level per side. Levels are spaced well apart so each line
-    // reads as its own run; sub-lanes a few pixels apart just looked like
-    // doubled lines. Kept inside the viewport as well.
-    var depth = [0.045, 0.10, 0.165, 0.24, 0.32];
+    // A bus of parallel runs per level, which is what gives the lower half its
+    // grid look. Levels stay inside the viewport; the runs within a level are
+    // spaced 8-14px apart so they read as a deliberate bus rather than a
+    // smear. Every run is stroked exactly once (the earlier doubled look was a
+    // spurious chord in pointAt, not the spacing).
+    var depth = [0.045, 0.10, 0.165, 0.235, 0.31];
 
     for (var i = 0; i < depth.length; i++) {
       var dy = depth[i] * H;
-      [-1, 1].forEach(function (side) {
-        var pts = tracePoints(dy, side, gap, 0);
-        lanes.push({
-          pts: pts,
-          m: measure(pts),
-          dim: 0.07 + 0.30 * (1 - i / depth.length),
-          pulses: [Math.random(), Math.random() * 0.6 + 0.2]
+      var runs = i < 2 ? 3 : 2;               // denser bus on the shallow levels
+      var step = i < 2 ? 12 : 10;             // spacing between runs in the bus
+      for (var k = 0; k < runs; k++) {
+        var offset = (k - (runs - 1) / 2) * step;
+        [-1, 1].forEach(function (side) {
+          var pts = tracePoints(dy, side, gap, offset);
+          lanes.push({
+            pts: pts,
+            m: measure(pts),
+            // the outermost runs of each level are dimmer, so the bus has depth
+            dim: (0.09 + 0.28 * (1 - i / depth.length)) * (k === 0 || k === runs - 1 ? 0.72 : 1),
+            pulses: [Math.random(), Math.random() * 0.6 + 0.2]
+          });
         });
-      });
+      }
       // junction dots sit on the horizontal run, never dead centre
       [-1, 1].forEach(function (side) {
         var x = side < 0 ? W * (0.07 + 0.075 * i) : W * (0.93 - 0.075 * i);
