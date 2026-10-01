@@ -76,12 +76,19 @@
     var ROWS = 11;
     for (var r = 0; r < ROWS; r++) {
       var t = Math.pow(0.80, r);           // 1 at the near edge -> 0 at the horizon
-      rows.push({
-        y: cy + floorDepth * t,
-        near: t,
-        // one packet per side, arriving along the row from the left and right
-        pulses: [{ side: -1, phase: Math.random() }, { side: 1, phase: Math.random() }]
+      var y = cy + floorDepth * t;
+
+      // One packet per side. Each runs along its own row to the centre column,
+      // turns there and follows that column up to the beacon — so it arrives
+      // at the core instead of fading out mid-row. The lines themselves are
+      // untouched: the packet just takes the corner.
+      var rowPulses = [];
+      [-1, 1].forEach(function (side) {
+        var pts = [[side < 0 ? 0 : W, y], [cx, y], [cx, cy]];
+        rowPulses.push({ pts: pts, m: measure(pts), phase: Math.random() });
       });
+
+      rows.push({ y: y, near: t, pulses: rowPulses });
     }
 
     // Columns: straight lines from the beacon down to evenly spaced points on
@@ -201,21 +208,23 @@
     ctx.lineTo(W, row.y);
     ctx.stroke();
 
-    // Packets sliding in along the row from both side lines, accelerating and
-    // brightening as they close on the centre column.
+    // Packets slide in along the row from both side lines, take the corner at
+    // the centre column and run up it to the beacon. Travel is near-linear so
+    // the corner is actually seen rather than blinked through, and brightness
+    // builds along the whole route instead of only at the end.
     for (var p = 0; p < row.pulses.length; p++) {
       var q = row.pulses[p];
       var u = (q.phase + time * 0.00005) % 1;
-      var travel = Math.pow(u, 1.35);
-      var x = q.side < 0 ? cx * travel : W - (W - cx) * travel;
-      var lum = Math.pow(u, 1.7) * Math.min(1, u / 0.08);   // no pop at the edge
+      var travel = Math.pow(u, 1.08);
+      var pt = pointAt(q.pts, q.m, q.m.total * travel);
+      var lum = Math.pow(u, 1.2) * Math.min(1, u / 0.08);   // no pop at the edge
       charge = Math.max(charge, Math.pow(u, 6));
       ctx.globalAlpha = 0.18 + lum * 0.82;
-      glow(x, row.y, 7 + 12 * lum, 0.06 + 0.45 * lum);
+      glow(pt.x, pt.y, 7 + 12 * lum, 0.06 + 0.45 * lum);
       ctx.globalAlpha = 1;
       ctx.fillStyle = 'rgba(190, 255, 246,' + (0.12 + 0.75 * lum).toFixed(3) + ')';
       ctx.beginPath();
-      ctx.arc(x, row.y, 1.0 + 1.2 * lum, 0, 6.2832);
+      ctx.arc(pt.x, pt.y, 1.0 + 1.2 * lum, 0, 6.2832);
       ctx.fill();
     }
   }
