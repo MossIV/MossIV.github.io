@@ -51,7 +51,10 @@
 
   function pointAt(pts, m, d) {
     if (m.total === 0) return { x: pts[0][0], y: pts[0][1] };
-    d = ((d % m.total) + m.total) % m.total;
+    // Clamp at the far end — wrapping d === total back to 0 would draw a
+    // spurious chord from the end of a path to its start.
+    if (d < 0) d = ((d % m.total) + m.total) % m.total;
+    if (d >= m.total) return { x: pts[pts.length - 1][0], y: pts[pts.length - 1][1] };
     for (var i = 1; i < pts.length; i++) {
       if (d <= m.acc[i]) {
         var seg = m.acc[i] - m.acc[i - 1];
