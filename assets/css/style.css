@@ -359,6 +359,66 @@ section { counter-increment: sec; }
   margin-top: -0.15rem;
 }
 
+/* ── Projects panel ──
+   A fixed-height panel that scrolls internally, with Lenis smoothing the wheel
+   inside it. The rest of the page keeps native scrolling. */
+.projects-panel { position: relative; }
+
+.projects-scroller {
+  height: clamp(420px, 58vh, 620px);
+  overflow-y: auto;
+  /* leave overscroll at auto so the page takes over at the panel's ends */
+  padding-right: 0.75rem;
+  border-radius: var(--radius);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-lit) transparent;
+}
+.projects-scroller:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 6px;
+}
+.projects-scroller::-webkit-scrollbar { width: 8px; }
+.projects-scroller::-webkit-scrollbar-track { background: transparent; }
+.projects-scroller::-webkit-scrollbar-thumb {
+  background: var(--border-lit);
+  border-radius: 999px;
+}
+.projects-scroller::-webkit-scrollbar-thumb:hover { background: var(--accent-line); }
+
+/* Two columns inside the panel: a real run of content to scroll through. */
+.projects-scroller .projects-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  padding-bottom: 1.5rem;
+}
+
+.projects-fade {
+  position: absolute;
+  left: 0; right: 0.75rem; bottom: 0;
+  height: 110px;
+  background: linear-gradient(180deg, rgba(5, 9, 11, 0), var(--bg) 90%);
+  pointer-events: none;
+}
+.projects-hint {
+  position: absolute;
+  right: 1.75rem; bottom: 0.85rem;
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: rgba(5, 9, 11, 0.78);
+  border: 1px solid var(--border-lit);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.projects-hint::after { content: ' ▾'; color: var(--accent); }
+.projects-hint.is-hidden { opacity: 0; }
+
 /* ── Skills ── */
 .skills-list { display: flex; flex-wrap: wrap; gap: 0.55rem; }
 .skill-pill {

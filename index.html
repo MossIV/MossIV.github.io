@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" defer></script>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -78,7 +79,9 @@
   <section id="projects">
     <div class="container">
       <h2 class="section-title">Projects</h2>
-      <div class="projects-grid">
+      <div class="projects-panel">
+        <div class="projects-scroller" id="projects-scroller" tabindex="0" role="region" aria-label="Projects — scroll inside this panel for more">
+          <div class="projects-grid">
 
         <!-- Project — Sharesies Goal Dashboard -->
         <article class="project-card">
@@ -227,9 +230,13 @@
             <span>Scripting</span>
           </div>
           <a href="https://github.com/MossIV/Python-Projects" target="_blank" rel="noopener">View on GitHub →</a>
-        </article>
+          </article>
 
-      </div>
+          </div><!-- /.projects-grid -->
+          </div><!-- /.projects-scroller -->
+          <div class="projects-fade" aria-hidden="true"></div>
+          <p class="projects-hint" aria-hidden="true">scroll</p>
+          </div><!-- /.projects-panel -->
     </div>
   </section>
 
@@ -336,8 +343,14 @@
     })();
 
     // ── Reveal cards as they scroll in ──
+    // Cards inside the Projects panel are handled with the panel as their root
+    // (below), because the viewport is not their scrollport.
     (function () {
-      var items = document.querySelectorAll('.project-card');
+      var scroller = document.getElementById('projects-scroller');
+      var items = Array.prototype.filter.call(
+        document.querySelectorAll('.project-card'),
+        function (el) { return !scroller || !scroller.contains(el); }
+      );
       if (!('IntersectionObserver' in window)) {
         items.forEach(function (el) { el.classList.add('is-visible'); });
         return;
@@ -365,6 +378,81 @@
         });
       }, { rootMargin: '-45% 0px -50% 0px' });
       sections.forEach(function (s) { if (s) spy.observe(s); });
+    })();
+
+    // ── Projects panel ──
+    // Lenis smooth scrolling scoped to the panel only: the page keeps native
+    // scrolling, and the library is attached to the panel as its wrapper.
+    (function () {
+      var scroller = document.getElementById('projects-scroller');
+      if (!scroller) return;
+
+      // Cards reveal against the panel, since it — not the viewport — is what
+      // clips them.
+      var cards = scroller.querySelectorAll('.project-card');
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            var el = e.target;
+            window.setTimeout(function () { el.classList.add('is-visible'); }, 40);
+            io.unobserve(el);
+          });
+        }, { root: scroller, rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
+        cards.forEach(function (el) { io.observe(el); });
+      } else {
+        cards.forEach(function (el) { el.classList.add('is-visible'); });
+      }
+
+      // The hint retires once the panel has been scrolled.
+      var hint = document.querySelector('.projects-hint');
+      var onScroll = function () {
+        if (hint) hint.classList.toggle('is-hidden', scroller.scrollTop > 40);
+      };
+      onScroll();
+      scroller.addEventListener('scroll', onScroll, { passive: true });
+
+      // Reduced motion: a hijacked scroll is exactly the wrong thing, so the
+      // panel keeps its native scrolling and nothing else changes.
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      function start() {
+        if (!window.Lenis || scroller.__lenis) return;   // CDN unavailable — native stands
+        var lenis = new window.Lenis({
+          wrapper: scroller,                     // the panel is the scroll container
+          content: scroller.firstElementChild,   // and this is what moves inside it
+          duration: 1.1,
+          easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+          smoothWheel: true,
+          syncTouch: false                       // phones keep native touch scrolling
+        });
+        scroller.__lenis = lenis;                // idempotent if start() runs twice
+
+        // Lenis prevents the wheel from chaining to the page, which traps the
+        // gesture inside the panel once it reaches either end. Hand it back
+        // explicitly: at the ends the panel stops moving and the page takes
+        // over, in the direction the user is scrolling.
+        scroller.addEventListener('wheel', function (e) {
+          var atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
+          var atTop = scroller.scrollTop <= 0;
+          if ((e.deltaY > 0 && atEnd) || (e.deltaY < 0 && atTop)) {
+            e.preventDefault();
+            window.scrollBy(0, e.deltaY);
+          }
+        }, { passive: false });
+
+        function raf(time) {
+          lenis.raf(time);
+          window.requestAnimationFrame(raf);
+        }
+        window.requestAnimationFrame(raf);
+        window.addEventListener('resize', function () { lenis.resize(); });
+      }
+
+      // The library is deferred, so it is not there yet when this inline script
+      // runs; by `load` it either exists or the CDN failed.
+      if (window.Lenis) start();
+      else window.addEventListener('load', start);
     })();
 
     // ── Hero canvas visual ──
