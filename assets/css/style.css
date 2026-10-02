@@ -50,7 +50,9 @@ body {
   line-height: 1.65;
   font-size: 1rem;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  /* No overflow property here on purpose: overflow on <body> makes it a scroll
+     container, which breaks position: sticky for everything inside it. Clipping
+     the horizontal axis is <html>'s job, where it propagates to the viewport. */
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -361,14 +363,22 @@ section { counter-increment: sec; }
 }
 
 /* ── Projects layout ──
-   Header on the left, cards scrolling on the right. */
+   Header on the left, cards scrolling on the right, inside a pinned track. */
+.projects-pin {
+  /* One viewport, plus the travel the cards need. The JS sets --pin-extra to
+     the panel's overflow, so page scroll is spent on the cards and the section
+     is released once they reach the bottom. */
+  position: relative;
+  height: calc(100svh + var(--pin-extra, 0px));
+}
 #projects {
-  /* The section owns the viewport when you land on it. */
-  min-height: 100svh;
+  position: sticky;                       /* holds still while the track passes */
+  top: 0;
+  height: 100svh;
   display: flex;
-  align-items: center;
-  padding-top: calc(var(--nav-h) + 2.5rem);
-  padding-bottom: 2.5rem;
+  align-items: stretch;
+  padding-top: calc(var(--nav-h) + 1.5rem);
+  padding-bottom: 1.5rem;
 }
 #projects .container { width: 100%; }
 
@@ -376,7 +386,8 @@ section { counter-increment: sec; }
   display: grid;
   grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
   gap: clamp(2rem, 4vw, 3.5rem);
-  align-items: start;
+  align-items: stretch;
+  height: 100%;
 }
 .projects-side {
   position: sticky;                       /* rides alongside the panel */
@@ -421,33 +432,42 @@ section { counter-increment: sec; }
 .projects-skip { margin-top: 1.4rem; }
 
 /* ── Projects panel ──
-   A fixed-height panel that scrolls internally, with Lenis smoothing the wheel
-   inside it. The rest of the page keeps native scrolling. */
-.projects-panel { position: relative; }
+   Driven by the page scroll (see the pin above): the panel is not
+   user-scrollable itself, it just shows the slice of the grid that the current
+   page position asks for. */
+.projects-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 
 .projects-scroller {
-  /* Fill the section: viewport minus the nav, the section padding and the
-     fade's breathing room, so the panel spans the page. */
-  height: clamp(420px, calc(100svh - var(--nav-h) - 9rem), 900px);
-  overflow-y: auto;
-  /* leave overscroll at auto so the page takes over at the panel's ends */
+  /* takes whatever height the layout gives it, and no wheel input of its own */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   padding-right: 0.75rem;
   border-radius: var(--radius);
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-lit) transparent;
 }
-.projects-scroller:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 6px;
-}
-.projects-scroller::-webkit-scrollbar { width: 8px; }
-.projects-scroller::-webkit-scrollbar-track { background: transparent; }
-.projects-scroller::-webkit-scrollbar-thumb {
-  background: var(--border-lit);
+
+/* Progress rail: the panel no longer has a scrollbar, so this shows how far
+   through the cards the page has travelled. */
+.projects-progress {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 2px;
+  background: var(--border);
   border-radius: 999px;
+  overflow: hidden;
 }
-.projects-scroller::-webkit-scrollbar-thumb:hover { background: var(--accent-line); }
+.projects-progress-fill {
+  display: block;
+  width: 100%;
+  height: 0;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--glow);
+}
 
 /* Two columns inside the panel: a real run of content to scroll through. */
 .projects-scroller .projects-grid {
@@ -557,11 +577,10 @@ footer {
   .projects-side { position: static; }
   .projects-display { font-size: clamp(1.8rem, 8vw, 2.4rem); }
   .projects-sub { max-width: 46ch; }
-  /* Stacked header plus a full-height panel would run past the screen, so the
-     header tightens and the decorative meta line steps aside. */
-  #projects { padding-top: 2rem; padding-bottom: 2rem; }
-  .projects-meta { display: none; }
-  .projects-scroller { height: clamp(340px, 52svh, 560px); }
+  /* Stacked: the header takes its own height, the panel takes the rest, so a
+     full-height panel can never push the section past the screen. */
+  #projects { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+  .projects-layout { grid-template-rows: auto minmax(0, 1fr); }
 }
 @media (max-width: 560px) {
   /* Two-row nav: the logo and all five links fit instead of the links

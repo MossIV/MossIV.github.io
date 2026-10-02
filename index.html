@@ -75,7 +75,8 @@
     </div>
   </section>
 
-  <!-- PROJECTS -->
+  <!-- PROJECTS — pinned: page scroll drives the cards, then moves on -->
+  <div class="projects-pin" id="projects-pin">
   <section id="projects">
     <div class="container">
       <div class="projects-layout">
@@ -95,7 +96,7 @@
         </div>
 
         <div class="projects-panel">
-          <div class="projects-scroller" id="projects-scroller" tabindex="0" role="region" aria-label="Projects — scroll inside this panel for more">
+          <div class="projects-scroller" id="projects-scroller" role="region" aria-label="Projects list">
             <div class="projects-grid">
 
         <!-- Project — Sharesies Goal Dashboard -->
@@ -251,10 +252,12 @@
           </div><!-- /.projects-scroller -->
           <div class="projects-fade" aria-hidden="true"></div>
           <p class="projects-hint" aria-hidden="true">scroll</p>
+          <div class="projects-progress" aria-hidden="true"><span class="projects-progress-fill"></span></div>
         </div><!-- /.projects-panel -->
       </div><!-- /.projects-layout -->
     </div>
   </section>
+  </div><!-- /.projects-pin -->
 
   <!-- EXPERIENCE -->
   <section id="experience">
@@ -420,55 +423,82 @@
         cards.forEach(function (el) { el.classList.add('is-visible'); });
       }
 
-      // The hint retires once the panel has been scrolled.
+      // ── Pin: the page scroll is spent on the cards ──
+      // The track is one viewport tall plus the panel's own scroll length, and
+      // the section sticks to the top of it. Page scroll maps onto the panel, so
+      // the section holds still while the cards run; when they reach the bottom
+      // the track ends and the page carries on to the next section. Nothing is
+      // hijacked: the mapping follows the real scroll position, so the scrollbar,
+      // keyboard and touch all keep working.
+      var pin = document.getElementById('projects-pin');
+      var fill = document.querySelector('.projects-progress-fill');
       var hint = document.querySelector('.projects-hint');
-      var onScroll = function () {
-        if (hint) hint.classList.toggle('is-hidden', scroller.scrollTop > 40);
-      };
-      onScroll();
-      scroller.addEventListener('scroll', onScroll, { passive: true });
+      var range = 0;
+      var trackTop = 0;
 
-      // Reduced motion: a hijacked scroll is exactly the wrong thing, so the
-      // panel keeps its native scrolling and nothing else changes.
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-      function start() {
-        if (!window.Lenis || scroller.__lenis) return;   // CDN unavailable — native stands
-        var lenis = new window.Lenis({
-          wrapper: scroller,                     // the panel is the scroll container
-          content: scroller.firstElementChild,   // and this is what moves inside it
-          duration: 1.1,
-          easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
-          smoothWheel: true,
-          syncTouch: false                       // phones keep native touch scrolling
-        });
-        scroller.__lenis = lenis;                // idempotent if start() runs twice
-
-        // Lenis prevents the wheel from chaining to the page, which traps the
-        // gesture inside the panel once it reaches either end. Hand it back
-        // explicitly: at the ends the panel stops moving and the page takes
-        // over, in the direction the user is scrolling.
-        scroller.addEventListener('wheel', function (e) {
-          var atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 1;
-          var atTop = scroller.scrollTop <= 0;
-          if ((e.deltaY > 0 && atEnd) || (e.deltaY < 0 && atTop)) {
-            e.preventDefault();
-            window.scrollBy(0, e.deltaY);
-          }
-        }, { passive: false });
-
-        function raf(time) {
-          lenis.raf(time);
-          window.requestAnimationFrame(raf);
+      function measure() {
+        // the panel is not user-scrollable, but scrollTop is still settable, so
+        // its overflow is exactly the travel this section consumes
+        range = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        if (pin) {
+          pin.style.setProperty('--pin-extra', range + 'px');
+          trackTop = pin.getBoundingClientRect().top + window.scrollY;
         }
-        window.requestAnimationFrame(raf);
-        window.addEventListener('resize', function () { lenis.resize(); });
       }
 
-      // The library is deferred, so it is not there yet when this inline script
-      // runs; by `load` it either exists or the CDN failed.
-      if (window.Lenis) start();
-      else window.addEventListener('load', start);
+      function apply() {
+        var p = range > 0 ? (window.scrollY - trackTop) / range : 0;
+        p = p < 0 ? 0 : (p > 1 ? 1 : p);
+        scroller.scrollTop = p * range;     // nothing fights this: no user scrolling here
+        if (fill) fill.style.height = (p * 100).toFixed(2) + '%';
+        if (hint) hint.classList.toggle('is-hidden', p > 0.02);
+      }
+
+      measure();
+      apply();
+      window.addEventListener('scroll', apply, { passive: true });
+      window.addEventListener('resize', function () { measure(); apply(); });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { measure(); apply(); });
+      }
+
+      // ── Page-level smooth scrolling ──
+      // The panel is scroll-driven now, so smoothing belongs to the page: Lenis
+      // runs on the window and the pin mapping simply follows its scroll events.
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        function startLenis() {
+          if (!window.Lenis || window.__pageLenis) return;   // CDN unavailable — native stands
+          var lenis = new window.Lenis({
+            duration: 1.1,
+            easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+            smoothWheel: true,
+            syncTouch: false                       // phones keep native touch scrolling
+          });
+          window.__pageLenis = lenis;
+
+          function raf(time) {
+            lenis.raf(time);
+            window.requestAnimationFrame(raf);
+          }
+          window.requestAnimationFrame(raf);
+
+          // In-page links ride the same easing, so the skip button clears the
+          // whole pinned track in one move instead of jumping.
+          document.addEventListener('click', function (e) {
+            var a = e.target.closest && e.target.closest('a[href^="#"]');
+            if (!a) return;
+            var target = document.querySelector(a.getAttribute('href'));
+            if (!target) return;
+            e.preventDefault();
+            // the section's own scroll-margin already clears the fixed nav
+            lenis.scrollTo(target, { offset: 0 });
+          });
+        }
+        // The library is deferred, so it is not there yet when this inline script
+        // runs; by `load` it either exists or the CDN failed.
+        if (window.Lenis) startLenis();
+        else window.addEventListener('load', startLenis);
+      }
     })();
 
     // ── Hero canvas visual ──
