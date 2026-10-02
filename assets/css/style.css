@@ -362,6 +362,16 @@ section { counter-increment: sec; }
 
 /* ── Projects layout ──
    Header on the left, cards scrolling on the right. */
+#projects {
+  /* The section owns the viewport when you land on it. */
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  padding-top: calc(var(--nav-h) + 2.5rem);
+  padding-bottom: 2.5rem;
+}
+#projects .container { width: 100%; }
+
 .projects-layout {
   display: grid;
   grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
@@ -416,7 +426,9 @@ section { counter-increment: sec; }
 .projects-panel { position: relative; }
 
 .projects-scroller {
-  height: clamp(460px, 66vh, 700px);
+  /* Fill the section: viewport minus the nav, the section padding and the
+     fade's breathing room, so the panel spans the page. */
+  height: clamp(420px, calc(100svh - var(--nav-h) - 9rem), 900px);
   overflow-y: auto;
   /* leave overscroll at auto so the page takes over at the panel's ends */
   padding-right: 0.75rem;
@@ -545,6 +557,11 @@ footer {
   .projects-side { position: static; }
   .projects-display { font-size: clamp(1.8rem, 8vw, 2.4rem); }
   .projects-sub { max-width: 46ch; }
+  /* Stacked header plus a full-height panel would run past the screen, so the
+     header tightens and the decorative meta line steps aside. */
+  #projects { padding-top: 2rem; padding-bottom: 2rem; }
+  .projects-meta { display: none; }
+  .projects-scroller { height: clamp(340px, 52svh, 560px); }
 }
 @media (max-width: 560px) {
   /* Two-row nav: the logo and all five links fit instead of the links
