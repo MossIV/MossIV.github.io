@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.26/dist/lenis.min.js" defer></script>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -35,7 +36,7 @@
 
     <div class="hero-inner">
       <div class="hero-identity">
-        <p class="hero-kicker">Auckland · Software Engineering</p>
+        <p class="hero-kicker">Auckland · Software Engineer</p>
         <h1>Wa Ben&nbsp;Wong</h1>
         <p class="hero-lines">Creative Problem Solver<br />AI Forward Thinker<br />Passionate Tinkerer</p>
       </div>
@@ -74,11 +75,29 @@
     </div>
   </section>
 
-  <!-- PROJECTS -->
+  <!-- PROJECTS — pinned: page scroll drives the cards, then moves on -->
+  <div class="projects-pin" id="projects-pin">
   <section id="projects">
     <div class="container">
-      <h2 class="section-title">Projects</h2>
-      <div class="projects-grid">
+      <div class="projects-layout">
+
+        <!-- Side header: stays put while the cards scroll beside it -->
+        <div class="projects-side">
+          <p class="projects-kicker">Selected work</p>
+          <h2 class="projects-display">Projects</h2>
+          <p class="projects-sub">
+            Self-hosted dashboards, an FPGA arcade game, an Android accessibility
+            service and a Discord music bot — across <strong>TypeScript</strong>,
+            <strong>Python</strong>, <strong>C#</strong>, <strong>Kotlin</strong>
+            and <strong>VHDL</strong>.
+          </p>
+          <a class="btn btn-ghost projects-skip" href="#experience">Skip to experience ↓</a>
+          <p class="projects-meta">08 projects · 2021 — 2026</p>
+        </div>
+
+        <div class="projects-panel">
+          <div class="projects-scroller" id="projects-scroller" role="region" aria-label="Projects list">
+            <div class="projects-grid">
 
         <!-- Project — Sharesies Goal Dashboard -->
         <article class="project-card">
@@ -227,11 +246,18 @@
             <span>Scripting</span>
           </div>
           <a href="https://github.com/MossIV/Python-Projects" target="_blank" rel="noopener">View on GitHub →</a>
-        </article>
+          </article>
 
-      </div>
+          </div><!-- /.projects-grid -->
+          </div><!-- /.projects-scroller -->
+          <div class="projects-fade" aria-hidden="true"></div>
+          <p class="projects-hint" aria-hidden="true">scroll</p>
+          <div class="projects-progress" aria-hidden="true"><span class="projects-progress-fill"></span></div>
+        </div><!-- /.projects-panel -->
+      </div><!-- /.projects-layout -->
     </div>
   </section>
+  </div><!-- /.projects-pin -->
 
   <!-- EXPERIENCE -->
   <section id="experience">
@@ -336,8 +362,14 @@
     })();
 
     // ── Reveal cards as they scroll in ──
+    // Cards inside the Projects panel are handled with the panel as their root
+    // (below), because the viewport is not their scrollport.
     (function () {
-      var items = document.querySelectorAll('.project-card');
+      var scroller = document.getElementById('projects-scroller');
+      var items = Array.prototype.filter.call(
+        document.querySelectorAll('.project-card'),
+        function (el) { return !scroller || !scroller.contains(el); }
+      );
       if (!('IntersectionObserver' in window)) {
         items.forEach(function (el) { el.classList.add('is-visible'); });
         return;
@@ -365,6 +397,108 @@
         });
       }, { rootMargin: '-45% 0px -50% 0px' });
       sections.forEach(function (s) { if (s) spy.observe(s); });
+    })();
+
+    // ── Projects panel ──
+    // Lenis smooth scrolling scoped to the panel only: the page keeps native
+    // scrolling, and the library is attached to the panel as its wrapper.
+    (function () {
+      var scroller = document.getElementById('projects-scroller');
+      if (!scroller) return;
+
+      // Cards reveal against the panel, since it — not the viewport — is what
+      // clips them.
+      var cards = scroller.querySelectorAll('.project-card');
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            var el = e.target;
+            window.setTimeout(function () { el.classList.add('is-visible'); }, 40);
+            io.unobserve(el);
+          });
+        }, { root: scroller, rootMargin: '0px 0px -6% 0px', threshold: 0.05 });
+        cards.forEach(function (el) { io.observe(el); });
+      } else {
+        cards.forEach(function (el) { el.classList.add('is-visible'); });
+      }
+
+      // ── Pin: the page scroll is spent on the cards ──
+      // The track is one viewport tall plus the panel's own scroll length, and
+      // the section sticks to the top of it. Page scroll maps onto the panel, so
+      // the section holds still while the cards run; when they reach the bottom
+      // the track ends and the page carries on to the next section. Nothing is
+      // hijacked: the mapping follows the real scroll position, so the scrollbar,
+      // keyboard and touch all keep working.
+      var pin = document.getElementById('projects-pin');
+      var fill = document.querySelector('.projects-progress-fill');
+      var hint = document.querySelector('.projects-hint');
+      var range = 0;
+      var trackTop = 0;
+
+      function measure() {
+        // the panel is not user-scrollable, but scrollTop is still settable, so
+        // its overflow is exactly the travel this section consumes
+        range = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+        if (pin) {
+          pin.style.setProperty('--pin-extra', range + 'px');
+          trackTop = pin.getBoundingClientRect().top + window.scrollY;
+        }
+      }
+
+      function apply() {
+        var p = range > 0 ? (window.scrollY - trackTop) / range : 0;
+        p = p < 0 ? 0 : (p > 1 ? 1 : p);
+        scroller.scrollTop = p * range;     // nothing fights this: no user scrolling here
+        if (fill) fill.style.height = (p * 100).toFixed(2) + '%';
+        if (hint) hint.classList.toggle('is-hidden', p > 0.02);
+      }
+
+      measure();
+      apply();
+      window.addEventListener('scroll', apply, { passive: true });
+      window.addEventListener('resize', function () { measure(); apply(); });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function () { measure(); apply(); });
+      }
+
+      // ── Page-level smooth scrolling ──
+      // The panel is scroll-driven now, so smoothing belongs to the page: Lenis
+      // runs on the window and the pin mapping simply follows its scroll events.
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        function startLenis() {
+          if (!window.Lenis || window.__pageLenis) return;   // CDN unavailable — native stands
+          var lenis = new window.Lenis({
+            duration: 1.1,
+            easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+            smoothWheel: true,
+            syncTouch: false                       // phones keep native touch scrolling
+          });
+          window.__pageLenis = lenis;
+
+          function raf(time) {
+            lenis.raf(time);
+            window.requestAnimationFrame(raf);
+          }
+          window.requestAnimationFrame(raf);
+
+          // In-page links ride the same easing, so the skip button clears the
+          // whole pinned track in one move instead of jumping.
+          document.addEventListener('click', function (e) {
+            var a = e.target.closest && e.target.closest('a[href^="#"]');
+            if (!a) return;
+            var target = document.querySelector(a.getAttribute('href'));
+            if (!target) return;
+            e.preventDefault();
+            // the section's own scroll-margin already clears the fixed nav
+            lenis.scrollTo(target, { offset: 0 });
+          });
+        }
+        // The library is deferred, so it is not there yet when this inline script
+        // runs; by `load` it either exists or the CDN failed.
+        if (window.Lenis) startLenis();
+        else window.addEventListener('load', startLenis);
+      }
     })();
 
     // ── Hero canvas visual ──
