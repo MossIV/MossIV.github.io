@@ -54,7 +54,9 @@ body {
 }
 
 a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: none; color: #7ff0e0; }
+/* Buttons own their hover colour; the generic link hover must not override it
+   (it is light-on-light for a filled button, which hid the label). */
+a:not(.btn):hover { text-decoration: none; color: #7ff0e0; }
 a:focus-visible, .btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -207,6 +209,7 @@ nav ul a:hover::after, nav ul a.is-active::after { width: 100%; }
 }
 .btn-primary:hover {
   background: #6ff0de;
+  color: var(--accent-ink);          /* keep the label dark on the lighter fill */
   box-shadow: 0 6px 28px rgba(79, 227, 207, 0.28);
   transform: translateY(-1px);
 }
