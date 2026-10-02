@@ -78,10 +78,25 @@
   <!-- PROJECTS -->
   <section id="projects">
     <div class="container">
-      <h2 class="section-title">Projects</h2>
-      <div class="projects-panel">
-        <div class="projects-scroller" id="projects-scroller" tabindex="0" role="region" aria-label="Projects — scroll inside this panel for more">
-          <div class="projects-grid">
+      <div class="projects-layout">
+
+        <!-- Side header: stays put while the cards scroll beside it -->
+        <div class="projects-side">
+          <p class="projects-kicker">Selected work</p>
+          <h2 class="projects-display">Projects</h2>
+          <p class="projects-sub">
+            Self-hosted dashboards, an FPGA arcade game, an Android accessibility
+            service and a Discord music bot — across <strong>TypeScript</strong>,
+            <strong>Python</strong>, <strong>C#</strong>, <strong>Kotlin</strong>
+            and <strong>VHDL</strong>.
+          </p>
+          <a class="btn btn-ghost projects-skip" href="#experience">Skip to experience ↓</a>
+          <p class="projects-meta">08 projects · 2021 — 2026</p>
+        </div>
+
+        <div class="projects-panel">
+          <div class="projects-scroller" id="projects-scroller" tabindex="0" role="region" aria-label="Projects — scroll inside this panel for more">
+            <div class="projects-grid">
 
         <!-- Project — Sharesies Goal Dashboard -->
         <article class="project-card">
@@ -236,7 +251,8 @@
           </div><!-- /.projects-scroller -->
           <div class="projects-fade" aria-hidden="true"></div>
           <p class="projects-hint" aria-hidden="true">scroll</p>
-          </div><!-- /.projects-panel -->
+        </div><!-- /.projects-panel -->
+      </div><!-- /.projects-layout -->
     </div>
   </section>
 

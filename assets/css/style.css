@@ -256,7 +256,8 @@ section + section { border-top: 1px solid var(--border); }
 /* Section index — the numbering mirrors the order of the sections. */
 main { counter-reset: sec; }
 section { counter-increment: sec; }
-.section-title::before {
+.section-title::before,
+.projects-kicker::before {
   content: counter(sec, decimal-leading-zero);
   font-family: var(--mono);
   font-size: 0.78rem;
@@ -359,13 +360,63 @@ section { counter-increment: sec; }
   margin-top: -0.15rem;
 }
 
+/* ── Projects layout ──
+   Header on the left, cards scrolling on the right. */
+.projects-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 330px) minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 3.5rem);
+  align-items: start;
+}
+.projects-side {
+  position: sticky;                       /* rides alongside the panel */
+  top: calc(var(--nav-h) + 3rem);
+}
+.projects-kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 1.1rem;
+}
+.projects-display {
+  font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+.projects-sub {
+  margin-top: 1.1rem;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 32ch;
+}
+.projects-sub strong { color: var(--text); font-weight: 500; }
+.projects-meta {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 1.4rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--border);
+}
+.projects-skip { margin-top: 1.4rem; }
+
 /* ── Projects panel ──
    A fixed-height panel that scrolls internally, with Lenis smoothing the wheel
    inside it. The rest of the page keeps native scrolling. */
 .projects-panel { position: relative; }
 
 .projects-scroller {
-  height: clamp(420px, 58vh, 620px);
+  height: clamp(460px, 66vh, 700px);
   overflow-y: auto;
   /* leave overscroll at auto so the page takes over at the panel's ends */
   padding-right: 0.75rem;
@@ -489,6 +540,11 @@ footer {
   nav ul li { flex-shrink: 0; }
   nav ul a { font-size: 0.82rem; }
   section { padding: 3.5rem 0; }
+  /* Side header stacks above the panel on narrow screens. */
+  .projects-layout { grid-template-columns: 1fr; gap: 1.75rem; }
+  .projects-side { position: static; }
+  .projects-display { font-size: clamp(1.8rem, 8vw, 2.4rem); }
+  .projects-sub { max-width: 46ch; }
 }
 @media (max-width: 560px) {
   /* Two-row nav: the logo and all five links fit instead of the links
